@@ -1,0 +1,24 @@
+name: Bug report
+description: A wrong hot line, a crash, missing processes, or the viewer misbehaving.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: The command you ran and perfproof's output
+      render: console
+  - type: input
+    id: env
+    attributes:
+      label: OS, Node.js version, perfproof version (`perfproof --version`)
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: If you can, attach the `.cpuprofile` files from `.perfproof/runs/<time>/` (they contain file paths and function names; check them first).

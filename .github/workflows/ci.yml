@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Committed CLI bundle is up to date
+        run: git diff --exit-code -- dist/cli
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+  cli:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Profile the example with the bundled CLI
+        working-directory: examples/log-report
+        run: node ../../dist/cli/perfproof.mjs run -q --no-save --top 3 -- node report.js 50000
+      - name: Bench and compare
+        working-directory: examples/log-report
+        run: |
+          node ../../dist/cli/perfproof.mjs bench -n 3 --save before -- node report.js 50000
+          node ../../dist/cli/perfproof.mjs bench -n 3 --compare before -- node report.fast.js 50000

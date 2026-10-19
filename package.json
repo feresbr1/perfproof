@@ -1,0 +1,72 @@
+{
+  "name": "perfproof",
+  "version": "1.0.0",
+  "description": "Find out why Node.js code is slow and prove the fix made it faster: hot lines with source, flame graphs, and statistically sound before/after benchmarks. Built for you and your coding agent.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Feres Ben Brahim",
+  "homepage": "https://feresbr1.github.io/perfproof/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/feresbr1/perfproof.git"
+  },
+  "bugs": {
+    "url": "https://github.com/feresbr1/perfproof/issues"
+  },
+  "keywords": [
+    "profiler",
+    "cpu-profile",
+    "flamegraph",
+    "benchmark",
+    "performance",
+    "nodejs",
+    "cpuprofile",
+    "agent-skill",
+    "claude-code"
+  ],
+  "bin": {
+    "perfproof": "dist/cli/perfproof.mjs"
+  },
+  "files": [
+    "dist/cli/perfproof.mjs",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.15"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:web && npm run build:cli",
+    "build:web": "vite build",
+    "build:cli": "node scripts/build-cli.mjs",
+    "preview": "vite preview --port 4177 --strictPort",
+    "deploy": "node scripts/deploy-pages.mjs",
+    "demo-data": "node scripts/demo-data.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@playwright/test": "^1.64.1",
+    "@preact/preset-vite": "^2.10.6",
+    "@types/node": "^24.19.2",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "preact": "^11.0.1",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}

@@ -1,0 +1,14 @@
+name: Feature or hint idea
+description: A new report section, output format, hint for a slow pattern, or tool integration.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like perfproof to do?
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: A real example (code, command, profile) where it would have helped
