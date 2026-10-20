@@ -139,6 +139,46 @@ npm install -D github:feresbr1/perfproof      # then: npx perfproof run -- ...
 Or download `perfproof.mjs` from the [latest release](https://github.com/feresbr1/perfproof/releases/latest)
 and run `node perfproof.mjs run -- ...`.
 
+## Use it in pull requests (GitHub Action)
+
+Benchmark every pull request against its base branch, in the same job, and fail it if it makes
+your command significantly slower:
+
+```yaml
+name: Performance
+on: [pull_request]
+jobs:
+  perfproof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - uses: feresbr1/perfproof@v1
+        with:
+          command: node scripts/build.js
+          setup: npm ci # prepares the base branch's checkout
+```
+
+The job summary shows both timings with the Welch's t-test verdict, followed by the pull request's
+hot lines. On a test repository where the pull request reverted the `examples/log-report` fix, it
+reported `SLOWER: takes 1.76× as long as the baseline (+75.7% time, p = 0.0016)` and failed the job.
+
+| Input               | Default                                        |                                                           |
+| ------------------- | ---------------------------------------------- | --------------------------------------------------------- |
+| `command`           | (required)                                     | Command to benchmark, run in `working-directory`          |
+| `base-ref`          | PR base branch, or the previous commit on push | What to compare against                                   |
+| `setup`             | none                                           | Command run in the base checkout first (e.g. `npm ci`)    |
+| `runs` / `warmup`   | `10` / `1`                                     | Timed and untimed runs per side                           |
+| `fail-if-slower`    | `true`                                         | Fail on a significant slowdown (p < 0.05 and at least 2%) |
+| `profile`           | `true`                                         | Add the hot lines of the current checkout to the summary  |
+| `working-directory` | `.`                                            | Where to run the command                                  |
+
+Shared CI machines are noisy: perfproof only reports a difference when it is statistically
+significant, but raise `runs` for short commands.
+
 ## Use it with a coding agent
 
 Install the skill (Claude Code, Codex, Cursor, Gemini CLI and other agents that read `SKILL.md`):

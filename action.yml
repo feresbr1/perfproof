@@ -1,0 +1,103 @@
+name: perfproof benchmark
+description: Benchmark a pull request against its base branch, fail if it is significantly slower, and show the hot lines.
+author: feresbr1
+branding:
+  icon: zap
+  color: orange
+inputs:
+  command:
+    description: Command to benchmark, e.g. "node scripts/build.js" or "npm test". Run in working-directory.
+    required: true
+  base-ref:
+    description: Git ref to compare against. Defaults to the pull request's base branch, or the previous commit on push.
+    required: false
+    default: ''
+  setup:
+    description: Command run in the base checkout before benchmarking it, e.g. "npm ci". The current checkout is used as your workflow prepared it.
+    required: false
+    default: ''
+  runs:
+    description: Timed runs per side.
+    required: false
+    default: '10'
+  warmup:
+    description: Untimed warm-up runs per side.
+    required: false
+    default: '1'
+  fail-if-slower:
+    description: Fail when the change is significantly slower (Welch's t-test, p < 0.05 and at least 2%).
+    required: false
+    default: 'true'
+  profile:
+    description: Also profile the current checkout and add its hot lines to the job summary (needs Node.js 22.15+).
+    required: false
+    default: 'true'
+  working-directory:
+    description: Directory to run the command in, relative to the repository root.
+    required: false
+    default: '.'
+runs:
+  using: composite
+  steps:
+    - name: Benchmark against the base
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        PP_COMMAND: ${{ inputs.command }}
+        PP_BASE_REF: ${{ inputs.base-ref }}
+        PP_SETUP: ${{ inputs.setup }}
+        PP_RUNS: ${{ inputs.runs }}
+        PP_WARMUP: ${{ inputs.warmup }}
+        PP_FAIL: ${{ inputs.fail-if-slower }}
+        PP_PROFILE: ${{ inputs.profile }}
+      run: |
+        set -o pipefail
+        cli="$GITHUB_ACTION_PATH/dist/cli/perfproof.mjs"
+        temp="${RUNNER_TEMP:-/tmp}"
+        prefix="$(git rev-parse --show-prefix)"
+
+        ref="$PP_BASE_REF"
+        if [ -z "$ref" ] && [ -n "$GITHUB_BASE_REF" ]; then
+          git fetch --no-tags --depth=1 origin "+refs/heads/$GITHUB_BASE_REF:refs/remotes/origin/$GITHUB_BASE_REF"
+          ref="origin/$GITHUB_BASE_REF"
+        fi
+        if [ -z "$ref" ]; then
+          if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then git fetch --no-tags --deepen=1 origin; fi
+          ref="HEAD~1"
+        fi
+        base_sha="$(git rev-parse --verify "$ref^{commit}")" || { echo "::error title=perfproof::Cannot find the base ref '$ref'."; exit 2; }
+
+        base_dir="$temp/perfproof-base"
+        rm -rf "$base_dir"
+        git worktree add --detach "$base_dir" "$base_sha" >/dev/null
+        trap 'git worktree remove --force "$base_dir" >/dev/null 2>&1' EXIT
+
+        echo "::group::Base ($ref, ${base_sha:0:7})"
+        (
+          cd "$base_dir/$prefix"
+          if [ -n "$PP_SETUP" ]; then bash -c "$PP_SETUP"; fi
+          node "$cli" bench -n "$PP_RUNS" -w "$PP_WARMUP" --save "$temp/base.json" -- "$PP_COMMAND"
+        ) || { echo "::error title=perfproof::Benchmarking the base failed."; exit 2; }
+        echo "::endgroup::"
+
+        args=(bench -n "$PP_RUNS" -w "$PP_WARMUP" --compare "$temp/base.json" --md)
+        if [ "$PP_FAIL" = "true" ]; then args+=(--fail-if-slower); fi
+        status=0
+        {
+          echo "### Compared with \`$ref\` (\`${base_sha:0:7}\`)"
+          echo ""
+        } >> "$GITHUB_STEP_SUMMARY"
+        node "$cli" "${args[@]}" -- "$PP_COMMAND" | tee -a "$GITHUB_STEP_SUMMARY" || status=$?
+        if [ "$status" = "1" ]; then
+          echo "::error title=perfproof::This change is significantly slower than $ref. See the job summary."
+        elif [ "$status" != "0" ]; then
+          echo "::error title=perfproof::Benchmarking the current checkout failed."
+        fi
+
+        if [ "$PP_PROFILE" = "true" ] && [ "$status" != "2" ]; then
+          echo "::group::Profile"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          node "$cli" run --md -q --no-save --top 5 -- "$PP_COMMAND" >> "$GITHUB_STEP_SUMMARY" || echo "::warning title=perfproof::Profiling was skipped (it needs Node.js 22.15 or newer)."
+          echo "::endgroup::"
+        fi
+        exit "$status"
