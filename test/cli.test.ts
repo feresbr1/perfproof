@@ -127,6 +127,23 @@ describe('perfproof analyze', () => {
 });
 
 describe('perfproof bench', () => {
+  it('labels a baseline given as a file path by its file name', async () => {
+    const dir = mkdtempSync(join(work, 'bench-path-'));
+    writeFileSync(join(dir, 'slow.js'), readFileSync(join(fixtures, 'child.js')));
+    const file = join(dir, 'base.json');
+    const save = await cli(
+      ['bench', '-n', '2', '-w', '0', '--save', file, '--', 'node', 'slow.js', '2000'],
+      dir,
+    );
+    expect(save.code).toBe(0);
+    const cmp = await cli(
+      ['bench', '-n', '2', '-w', '0', '--compare', file, '--md', '--', 'node', 'slow.js', '2000'],
+      dir,
+    );
+    expect(cmp.code).toBe(0);
+    expect(cmp.out).toContain('| Baseline (base) |');
+  });
+
   it('saves a baseline and compares against it', async () => {
     const dir = mkdtempSync(join(work, 'bench-'));
     writeFileSync(join(dir, 'slow.js'), readFileSync(join(fixtures, 'child.js')));

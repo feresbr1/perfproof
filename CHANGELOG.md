@@ -3,6 +3,18 @@
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-10-20
+
+### Added
+
+- GitHub Action: `uses: feresbr1/perfproof@v1` benchmarks a pull request against its base branch
+  in the same job, fails it when it is significantly slower, and adds the hot lines to the job
+  summary.
+
+### Changed
+
+- A baseline given as a file path (`--compare path/to/base.json`) is labelled by its file name.
+
 ## [1.0.0] - 2026-10-19
 
 ### Added
@@ -19,4 +31,5 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `perfproof guide` and an agent skill (`npx skills add feresbr1/perfproof`).
 - Web viewer with a real demo report and drag-and-drop `.cpuprofile` loading.
 
+[1.0.1]: https://github.com/feresbr1/perfproof/releases/tag/v1.0.1
 [1.0.0]: https://github.com/feresbr1/perfproof/releases/tag/v1.0.0

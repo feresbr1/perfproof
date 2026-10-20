@@ -1,6 +1,6 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, relative, resolve } from 'node:path';
+import { basename, join, relative, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { benchMarkdown, benchText, markdownReport, textReport } from '../core/report';
 import { compare } from '../core/stats';
@@ -277,7 +277,8 @@ async function benchCmd(p: Parsed, io: Io): Promise<number> {
     compareName === undefined
       ? undefined
       : {
-          name: compareName === true ? 'baseline' : compareName,
+          // A baseline given as a file path is labelled by its file name: base.json -> "base".
+          name: compareName === true ? 'baseline' : basename(compareName).replace(/\.json$/, ''),
           result: loadBaseline(io.cwd, compareName === true ? 'baseline' : compareName),
         };
 

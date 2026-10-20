@@ -1,6 +1,6 @@
 {
   "name": "perfproof",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Find out why Node.js code is slow and prove the fix made it faster: hot lines with source, flame graphs, and statistically sound before/after benchmarks. Built for you and your coding agent.",
   "type": "module",
   "license": "MIT",

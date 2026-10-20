@@ -3,7 +3,7 @@
 // src/cli/main.ts
 import { mkdtempSync, rmSync as rmSync2, writeFileSync as writeFileSync3 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join as join3, relative, resolve as resolve3 } from "node:path";
+import { basename, join as join3, relative, resolve as resolve3 } from "node:path";
 import { spawn as spawn2 } from "node:child_process";
 
 // src/core/profile.ts
@@ -1153,7 +1153,7 @@ function newRunDir(cwd) {
 }
 
 // src/cli/main.ts
-var VERSION = true ? "1.0.0" : "0.0.0-dev";
+var VERSION = true ? "1.0.1" : "0.0.0-dev";
 var HELP = `perfproof ${VERSION}: find out why Node.js code is slow, and prove a fix made it faster.
 
 Usage
@@ -1393,7 +1393,8 @@ async function benchCmd(p, io) {
   const saveName = p.flags.get("--save");
   const compareName = p.flags.get("--compare");
   const baseline = compareName === void 0 ? void 0 : {
-    name: compareName === true ? "baseline" : compareName,
+    // A baseline given as a file path is labelled by its file name: base.json -> "base".
+    name: compareName === true ? "baseline" : basename(compareName).replace(/\.json$/, ""),
     result: loadBaseline(io.cwd, compareName === true ? "baseline" : compareName)
   };
   io.err(`perfproof: timing ${commandLine(argv)} (${warmup} warm-up + ${runs} runs)
